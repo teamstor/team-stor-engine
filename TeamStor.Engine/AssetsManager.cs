@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Media;
 using TeamStor.Engine.Graphics;
 using Microsoft.Xna.Framework;
 using TeamStor.Engine.Graphics;
+using System.Threading;
 
 namespace TeamStor.Engine
 {
@@ -88,6 +89,8 @@ namespace TeamStor.Engine
 
             _watcher = new FileSystemWatcher(Directory);
             _watcher.EnableRaisingEvents = true;
+            _watcher.NotifyFilter = NotifyFilters.LastWrite;
+            _watcher.IncludeSubdirectories = true;
             _watcher.Changed += OnAssetChanged;
 		}
 
@@ -95,15 +98,35 @@ namespace TeamStor.Engine
         {
             if(e.ChangeType == WatcherChangeTypes.Changed)
             {
+                bool canOpen = false;
+                for(int i = 0; i < 5; i++)
+                {
+                    try
+                    {
+                        FileStream stream = new FileStream(e.FullPath, FileMode.Open);
+                        stream.Dispose();
+                        canOpen = true;
+                    }
+                    catch
+                    {
+                        canOpen = false;
+                        Thread.Sleep(500 * (i + 1));
+                    }
+                }
+
+                if(!canOpen)
+                    return;
+
                 foreach(KeyValuePair<string, LoadedAsset> pair in _loadedAssets)
                 {
                     if(Path.GetFullPath(e.FullPath).ToLowerInvariant() == Path.GetFullPath(Directory + "/" + pair.Value.Path).ToLowerInvariant())
                     {
                         ReloadAsset(pair.Value.Path);
-                        AssetChanged(this, new AssetChangedEventArgs() {
-                            Name = pair.Value.Path,
-                            Asset = _loadedAssets[pair.Value.Path.ToLowerInvariant()].Asset
-                        });
+                        if(AssetChanged != null)
+                            AssetChanged(this, new AssetChangedEventArgs() {
+                                Name = pair.Value.Path,
+                                Asset = _loadedAssets[pair.Value.Path.ToLowerInvariant()].Asset
+                            });
                         break;
                     }
                 }
@@ -148,25 +171,27 @@ namespace TeamStor.Engine
 		{
             asset = null;
 
-			if(_loadedAssets.ContainsKey(name))
+			if(_loadedAssets.ContainsKey(name.ToLowerInvariant()))
 			{
-				if(_loadedAssets[name].Asset is T)
+				if(_loadedAssets[name.ToLowerInvariant()].Asset is T)
 				{
-					asset = (T)_loadedAssets[name].Asset;
+					asset = (T)_loadedAssets[name.ToLowerInvariant()].Asset;
 					return true;
 				}
 
 				return false;
 			}
 			
-			if(!File.Exists(Directory + "/" + name))
+			if(!File.Exists(Directory + "/" + name.ToLowerInvariant()))
 				return false;
 
 			try
 			{
 				if(typeof(T) == typeof(Texture2D))
 				{
-					using(FileStream stream = new FileStream(Directory + "/" + name, FileMode.Open))
+					using(FileStream stream = new FileStream(Directory + "/" + name.ToLowerInvariant(), FileMode.Open,
+                                      FileAccess.Read,
+                                      FileShare.ReadWrite))
 					{
 						Texture2D texture = Texture2D.FromStream(Game.GraphicsDevice, stream);
                         Color[] data = new Color[texture.Width * texture.Height];
@@ -178,7 +203,7 @@ namespace TeamStor.Engine
                         texture.SetData(data);
 
                         asset = texture as T;
-						_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
+						_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
 						return true;
 					}
 				}
@@ -186,16 +211,18 @@ namespace TeamStor.Engine
 				if(typeof(T) == typeof(Font))
 				{
 					asset = new Font(Game.GraphicsDevice, Directory + "/" + name) as T;
-					_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
+					_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
 					return true;
 				}
 				
 				if(typeof(T) == typeof(SoundEffect))
 				{
-					using(FileStream stream = new FileStream(Directory + "/" + name, FileMode.Open))
+					using(FileStream stream = new FileStream(Directory + "/" + name.ToLowerInvariant(), FileMode.Open,
+                                      FileAccess.Read,
+                                      FileShare.ReadWrite))
 					{
 						asset = SoundEffect.FromStream(stream) as T;
-						_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
+						_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
 						return true;
 					}
 				}
@@ -206,16 +233,16 @@ namespace TeamStor.Engine
 					ConstructorInfo ctor = typeof(Song).GetConstructor(
 						BindingFlags.NonPublic | BindingFlags.Instance, null,
 						new[] { typeof(string) }, null);
-					asset = ctor.Invoke(new object[] { Directory + "/" + name }) as T;
+					asset = ctor.Invoke(new object[] { Directory + "/" + name.ToLowerInvariant() }) as T;
 					
-					_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
+					_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
 					return true;
 				}
 				
 				if(typeof(T) == typeof(Effect))
 				{
 					asset = new Effect(Game.GraphicsDevice, File.ReadAllBytes(Directory + "/" + name)) as T;
-					_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
+					_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name, keepAfterStateChange));
 					return true;
 				}
 
@@ -271,6 +298,7 @@ namespace TeamStor.Engine
 				return false;
 
 			_loadedAssets[name.ToLowerInvariant()].Asset.Dispose();
+            _loadedAssets.Remove(name.ToLowerInvariant());
 			return true;
 		}
 
