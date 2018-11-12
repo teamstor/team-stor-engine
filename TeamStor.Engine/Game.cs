@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using TeamStor.Engine.Graphics;
 using TeamStor.Engine.Graphics;
+using static TeamStor.Engine.Graphics.SpriteBatch;
 using SpriteBatch = TeamStor.Engine.Graphics.SpriteBatch;
 
 namespace TeamStor.Engine
@@ -84,7 +85,12 @@ namespace TeamStor.Engine
         {
             FPS = 1,
             General = 2,
-            SpriteBatch = 4
+            SpriteBatch = 4,
+            User1 = 8,
+            User2 = 16,
+            User3 = 32,
+            User4 = 64,
+            User5 = 128
         }
 
         /// <summary>
@@ -271,6 +277,36 @@ namespace TeamStor.Engine
         /// </summary>
         public event EventHandler<ChangeStateEventArgs> OnStateChange;
 
+        public class DrawCustomDebugStatsEventArgs : EventArgs
+        {
+            public DrawCustomDebugStatsEventArgs(DebugStats stats, int currentY, FontStyle fontStyle)
+            {
+                Stats = stats;
+                CurrentY = currentY;
+                FontStyle = fontStyle;
+            }
+
+            /// <summary>
+            /// The current enabled debug stats.
+            /// </summary>
+            public DebugStats Stats;
+
+            /// <summary>
+            /// The current Y value of the debug text.
+            /// </summary>
+            public int CurrentY;
+
+            /// <summary>
+            /// The font style to draw debug text with.
+            /// </summary>
+            public FontStyle FontStyle;
+        }
+
+        /// <summary>
+        /// Called when custom debug stats should be drawn.
+        /// </summary>
+        public event EventHandler<DrawCustomDebugStatsEventArgs> OnCustomDebugStats;
+
         /// <summary>
         /// If v-sync is enabled.
         /// </summary>
@@ -441,6 +477,46 @@ namespace TeamStor.Engine
             if(Input.KeyPressed(Keys.F5))
                 VSync = !VSync;
 
+            if(Input.KeyPressed(Keys.F6))
+            {
+                if(Stats.HasFlag(DebugStats.User1))
+                    Stats &= ~DebugStats.User1;
+                else
+                    Stats |= DebugStats.User1;
+            }
+
+            if(Input.KeyPressed(Keys.F7))
+            {
+                if(Stats.HasFlag(DebugStats.User2))
+                    Stats &= ~DebugStats.User2;
+                else
+                    Stats |= DebugStats.User2;
+            }
+
+            if(Input.KeyPressed(Keys.F8))
+            {
+                if(Stats.HasFlag(DebugStats.User3))
+                    Stats &= ~DebugStats.User3;
+                else
+                    Stats |= DebugStats.User3;
+            }
+
+            if(Input.KeyPressed(Keys.F9))
+            {
+                if(Stats.HasFlag(DebugStats.User4))
+                    Stats &= ~DebugStats.User4;
+                else
+                    Stats |= DebugStats.User4;
+            }
+
+            if(Input.KeyPressed(Keys.F10))
+            {
+                if(Stats.HasFlag(DebugStats.User5))
+                    Stats &= ~DebugStats.User5;
+                else
+                    Stats |= DebugStats.User5;
+            }
+
             _accumTime += DeltaTime;
             _framesSinceLastFpsReset++;
             _accumTimeSinceLastFpsReset += DeltaTime;
@@ -559,6 +635,9 @@ namespace TeamStor.Engine
                     y += 18;
                     Batch.Text(SpriteBatch.FontStyle.Mono, 16, "Time spent in End() (GPU): " + Math.Round(Batch.Stats.TimeInEnd, 1) + " ms", new Vector2(10, y), Color.CadetBlue);
                 }
+
+                if(OnCustomDebugStats != null)
+                    OnCustomDebugStats(this, new DrawCustomDebugStatsEventArgs(Stats, y, FontStyle.Mono));
             }
             
             Batch.Stats.Reset();
