@@ -119,13 +119,13 @@ namespace TeamStor.Engine
 
                 foreach(KeyValuePair<string, LoadedAsset> pair in _loadedAssets)
                 {
-                    if(Path.GetFullPath(e.FullPath).ToLowerInvariant() == Path.GetFullPath(Directory + "/" + pair.Value.Path).ToLowerInvariant())
+                    if(Path.GetFullPath(e.FullPath) == Path.GetFullPath(Directory + "/" + pair.Value.Path))
                     {
                         ReloadAsset(pair.Value.Path);
                         if(AssetChanged != null)
                             AssetChanged(this, new AssetChangedEventArgs() {
                                 Name = pair.Value.Path,
-                                Asset = _loadedAssets[pair.Value.Path.ToLowerInvariant()].Asset
+                                Asset = _loadedAssets[pair.Value.Path].Asset
                             });
                         break;
                     }
@@ -171,25 +171,25 @@ namespace TeamStor.Engine
 		{
             asset = null;
 
-			if(_loadedAssets.ContainsKey(name.ToLowerInvariant()))
+			if(_loadedAssets.ContainsKey(name))
 			{
-				if(_loadedAssets[name.ToLowerInvariant()].Asset is T)
+				if(_loadedAssets[name].Asset is T)
 				{
-					asset = (T)_loadedAssets[name.ToLowerInvariant()].Asset;
+					asset = (T)_loadedAssets[name].Asset;
 					return true;
 				}
 
 				return false;
 			}
 			
-			if(!File.Exists(Directory + "/" + name.ToLowerInvariant()))
+			if(!File.Exists(Directory + "/" + name))
 				return false;
 
 			try
 			{
 				if(typeof(T) == typeof(Texture2D))
 				{
-					using(FileStream stream = new FileStream(Directory + "/" + name.ToLowerInvariant(), FileMode.Open,
+					using(FileStream stream = new FileStream(Directory + "/" + name, FileMode.Open,
                                       FileAccess.Read,
                                       FileShare.ReadWrite))
 					{
@@ -203,7 +203,7 @@ namespace TeamStor.Engine
                         texture.SetData(data);
 
                         asset = texture as T;
-						_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
+						_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
 						return true;
 					}
 				}
@@ -211,18 +211,18 @@ namespace TeamStor.Engine
 				if(typeof(T) == typeof(Font))
 				{
 					asset = new Font(Game.GraphicsDevice, Directory + "/" + name) as T;
-					_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
+					_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
 					return true;
 				}
 				
 				if(typeof(T) == typeof(SoundEffect))
 				{
-					using(FileStream stream = new FileStream(Directory + "/" + name.ToLowerInvariant(), FileMode.Open,
+					using(FileStream stream = new FileStream(Directory + "/" + name, FileMode.Open,
                                       FileAccess.Read,
                                       FileShare.ReadWrite))
 					{
 						asset = SoundEffect.FromStream(stream) as T;
-						_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
+						_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
 						return true;
 					}
 				}
@@ -233,16 +233,16 @@ namespace TeamStor.Engine
 					ConstructorInfo ctor = typeof(Song).GetConstructor(
 						BindingFlags.NonPublic | BindingFlags.Instance, null,
 						new[] { typeof(string) }, null);
-					asset = ctor.Invoke(new object[] { Directory + "/" + name.ToLowerInvariant() }) as T;
+					asset = ctor.Invoke(new object[] { Directory + "/" + name }) as T;
 					
-					_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name.ToLowerInvariant(), keepAfterStateChange));
+					_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
 					return true;
 				}
 				
 				if(typeof(T) == typeof(Effect))
 				{
 					asset = new Effect(Game.GraphicsDevice, File.ReadAllBytes(Directory + "/" + name)) as T;
-					_loadedAssets.Add(name.ToLowerInvariant(), new LoadedAsset(asset, name, keepAfterStateChange));
+					_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
 					return true;
 				}
 
@@ -262,10 +262,10 @@ namespace TeamStor.Engine
         /// <returns>True if an asset was actually reloaded.</returns>
         public bool ReloadAsset(string name)
         {
-            if(!_loadedAssets.ContainsKey(name.ToLowerInvariant()))
+            if(!_loadedAssets.ContainsKey(name))
                 return false;
 
-            LoadedAsset oldAsset = _loadedAssets[name.ToLowerInvariant()];
+            LoadedAsset oldAsset = _loadedAssets[name];
             UnloadAsset(name);
 
             Texture2D o1;
@@ -294,11 +294,11 @@ namespace TeamStor.Engine
         /// <returns>True if an asset was actually unloaded.</returns>
         public bool UnloadAsset(string name)
 		{
-			if(!_loadedAssets.ContainsKey(name.ToLowerInvariant()))
+			if(!_loadedAssets.ContainsKey(name))
 				return false;
 
-			_loadedAssets[name.ToLowerInvariant()].Asset.Dispose();
-            _loadedAssets.Remove(name.ToLowerInvariant());
+			_loadedAssets[name].Asset.Dispose();
+            _loadedAssets.Remove(name);
 			return true;
 		}
 
@@ -309,7 +309,7 @@ namespace TeamStor.Engine
 		/// <returns>If the asset is loaded.</returns>
 		public bool HasAssetLoaded(string name)
 		{
-			return _loadedAssets.ContainsKey(name.ToLowerInvariant());
+			return _loadedAssets.ContainsKey(name);
 		}
 		
 		/// <summary>
@@ -319,7 +319,7 @@ namespace TeamStor.Engine
 		/// <returns>If the asset is loaded and will be kept after a state change.</returns>
 		public bool IsAssetKeptAfterStateChange(string name)
 		{
-			return _loadedAssets.ContainsKey(name.ToLowerInvariant()) && _loadedAssets[name.ToLowerInvariant()].KeepAfterStateChange;
+			return _loadedAssets.ContainsKey(name) && _loadedAssets[name].KeepAfterStateChange;
 		}
 		
 		private void OnStateChange(object sender, Game.ChangeStateEventArgs e)
