@@ -23,7 +23,8 @@ namespace TeamStor.Engine
         private GameState _state;
         private GameState _initialState;
 
-        private double _lastUpdateTime;
+        private Stopwatch _timer;
+
         private double _accumTime;
 
         private long _framesSinceLastFpsReset;
@@ -426,12 +427,14 @@ namespace TeamStor.Engine
         protected override void Update(GameTime gameTime)
         {
             Stopwatch watch = new Stopwatch();
-            Time = gameTime.TotalGameTime.TotalSeconds;
 
-            if(_lastUpdateTime == 0)
-                _lastUpdateTime = Time;
+            if(_timer == null)
+                _timer = Stopwatch.StartNew();
 
-            DeltaTime = Time - _lastUpdateTime;
+            DeltaTime = _timer.Elapsed.TotalSeconds;
+            Time += DeltaTime;
+
+            _timer.Restart();
 
             if(OnUpdateBeforeState != null)
                 OnUpdateBeforeState(this, new UpdateEventArgs(DeltaTime, Time, TotalUpdates));
@@ -550,8 +553,6 @@ namespace TeamStor.Engine
 
             watch.Stop();
             _timeInFixedUpdate = watch.Elapsed.TotalMilliseconds;
-
-            _lastUpdateTime = Time;
             
             base.Update(gameTime);
         }
