@@ -22,10 +22,13 @@ namespace TeamStor.Engine
 			{
 				Mouse = new MouseState();
 				Keyboard = new KeyboardState();
-			}
+                Gamepads = new GamePadState[4];
+
+            }
 			
 			public MouseState Mouse;
 			public KeyboardState Keyboard;
+            public GamePadState[] Gamepads;
 		}
 
 		private InputState _lastState = new InputState();
@@ -112,6 +115,9 @@ namespace TeamStor.Engine
 			_currentState = new InputState();
 			_currentState.Mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
 			_currentState.Keyboard = Keyboard.GetState();
+
+            for(int i = 0; i < 4; i++)
+                _currentState.Gamepads[i] = GamePad.GetState(i);
 		}
 		
 		private void OnFixedUpdateBeforeState(object sender, Game.FixedUpdateEventArgs e)
@@ -123,9 +129,12 @@ namespace TeamStor.Engine
 			_fixedUpdateCurrentState = new InputState();
 			_fixedUpdateCurrentState.Mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
 			_fixedUpdateCurrentState.Keyboard = Keyboard.GetState();
-		}
-		
-		private void OnFixedUpdateAfterState(object sender, Game.FixedUpdateEventArgs e)
+
+            for(int i = 0; i < 4; i++)
+                _fixedUpdateCurrentState.Gamepads[i] = GamePad.GetState(i);
+        }
+
+        private void OnFixedUpdateAfterState(object sender, Game.FixedUpdateEventArgs e)
 		{
 			FixedUpdateMode = false;
 		}
@@ -243,5 +252,27 @@ namespace TeamStor.Engine
 
 			return false;
 		}
-	}
+
+        /// <param name="gamepad">0-3, the gamepad to select</param>
+        /// <returns>Current state of the specified gamepad.</returns>
+        public GamePadState Gamepad(int gamepad)
+        {
+            InputState input = _currentState;
+            if(FixedUpdateMode)
+                input = _fixedUpdateCurrentState;
+
+            return input.Gamepads[gamepad];
+        }
+
+        /// <param name="gamepad">0-3, the gamepad to select</param>
+        /// <returns>Current state of the specified gamepad last frame.</returns>
+        public GamePadState LastGamepad(int gamepad)
+        {
+            InputState input = _lastState;
+            if(FixedUpdateMode)
+                input = _fixedUpdateLastState;
+
+            return input.Gamepads[gamepad];
+        }
+    }
 }
