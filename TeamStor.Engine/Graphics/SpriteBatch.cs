@@ -130,6 +130,7 @@ namespace TeamStor.Engine.Graphics
         }
         
         private Matrix _transform = Matrix.Identity;
+        private Vector3 _decomposedTransformScale = new Vector3(1, 1, 1);
         
         /// <summary>
         /// Transformation to apply when drawing.
@@ -146,7 +147,12 @@ namespace TeamStor.Engine.Graphics
                         End();
                     
                     _transform = value;
-                    
+
+                    Vector3 translation;
+                    Quaternion rotation;
+
+                    Transform.Decompose(out _decomposedTransformScale, out rotation, out translation);
+
                     if(itemsQueued)
                         ResetSpriteBatch();
                 }
@@ -265,6 +271,17 @@ namespace TeamStor.Engine.Graphics
             _monoGameSpriteBatch.Begin(SortMode, BlendState, SamplerState, DepthStencilState.Default, _rastState, Effect, Transform);
             ItemsQueued = true;
         }
+
+        /// <summary>
+        /// Rounds a vector with integer precision based on the current transform.
+        /// </summary>
+        /// <param name="valueIn">Vector to round.</param>
+        /// <returns>The rounded vector.</returns>
+        public Vector2 SmartRound(Vector2 valueIn)
+        {
+            return new Vector2((int)(valueIn.X * _decomposedTransformScale.X) / _decomposedTransformScale.X, 
+                (int)(valueIn.Y * _decomposedTransformScale.Y) / _decomposedTransformScale.Y);
+        }
         
         /// <summary>
         /// Draws a texture at the specified position.
@@ -283,7 +300,7 @@ namespace TeamStor.Engine.Graphics
                 ResetSpriteBatch();
 
             Stats.DrawnTextures++;
-            _monoGameSpriteBatch.Draw(texture, new Vector2((int)pos.X, (int)pos.Y), crop, color, rotation, rotationOrigin.HasValue ? rotationOrigin.Value : Vector2.Zero, scale.HasValue ? scale.Value : Vector2.One, effect, 0f);
+            _monoGameSpriteBatch.Draw(texture, SmartRound(pos), crop, color, rotation, rotationOrigin.HasValue ? rotationOrigin.Value : Vector2.Zero, scale.HasValue ? scale.Value : Vector2.One, effect, 0f);
         }
         
         /// <summary>
@@ -502,6 +519,7 @@ namespace TeamStor.Engine.Graphics
             _samplerState = SamplerState.AnisotropicClamp;
             _effect = null;
             _transform = Matrix.Identity;
+            _decomposedTransformScale = new Vector3(1, 1, 1);
             _scissor = null;
             _renderTarget = null;
             _rastState = new RasterizerState();
