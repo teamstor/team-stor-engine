@@ -336,10 +336,13 @@ namespace TeamStor.Engine
                 {
                     if(value)
                     {
-                        _graphicsDeviceManager.PreferredBackBufferWidth =
-                            GraphicsDevice.Adapter.CurrentDisplayMode.Width;
-                        _graphicsDeviceManager.PreferredBackBufferHeight =
-                            GraphicsDevice.Adapter.CurrentDisplayMode.Height;
+                        if(GraphicsDevice != null)
+                        {
+                            _graphicsDeviceManager.PreferredBackBufferWidth =
+                                GraphicsDevice.Adapter.CurrentDisplayMode.Width;
+                            _graphicsDeviceManager.PreferredBackBufferHeight =
+                                GraphicsDevice.Adapter.CurrentDisplayMode.Height;
+                        }
                     }
                     else
                     {
