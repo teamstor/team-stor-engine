@@ -379,7 +379,7 @@ namespace TeamStor.Engine
         
         private Game(GameState initialState, string assetsDir = "data", bool showTeamStorLogo = true)
         {
-            Assets = new AssetsManager(this, assetsDir);
+            Assets = new AssetsManager(this, AppDomain.CurrentDomain.BaseDirectory + assetsDir);
             Input = new InputManager(this);
             
             if(showTeamStorLogo)
