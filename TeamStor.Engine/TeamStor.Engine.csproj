@@ -34,8 +34,8 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MonoGame.Framework, Version=3.6.0.1625, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\Dependencies\MonoGame.Framework.dll</HintPath>
+    <Reference Include="FNA, Version=19.2.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\Dependencies\FNA.dll</HintPath>
     </Reference>
     <Reference Include="SharpFont, Version=4.0.1.200, Culture=neutral, PublicKeyToken=48add4c483071cdf">
       <HintPath>..\Dependencies\SharpFont.dll</HintPath>

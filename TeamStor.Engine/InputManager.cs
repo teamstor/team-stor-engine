@@ -49,9 +49,9 @@ namespace TeamStor.Engine
 		{
 			get
 			{
-				Point result = _currentState.Mouse.Position;
+				Point result = new Point(_currentState.Mouse.X, _currentState.Mouse.Y);
 				if(FixedUpdateMode)
-					result = _fixedUpdateCurrentState.Mouse.Position;
+					result = new Point(_fixedUpdateCurrentState.Mouse.X, _fixedUpdateCurrentState.Mouse.Y);
 				
 				return new Vector2(result.X, result.Y);
 			}
@@ -64,9 +64,9 @@ namespace TeamStor.Engine
         {
             get
             {
-                Point result = _lastState.Mouse.Position;
-                if(FixedUpdateMode)
-                    result = _fixedUpdateLastState.Mouse.Position;
+	            Point result = new Point(_lastState.Mouse.X, _lastState.Mouse.Y);
+	            if(FixedUpdateMode)
+		            result = new Point(_fixedUpdateLastState.Mouse.X, _fixedUpdateLastState.Mouse.Y);
 
                 return new Vector2(result.X, result.Y);
             }
@@ -79,9 +79,9 @@ namespace TeamStor.Engine
 		{
 			get
 			{
-				Point result = _currentState.Mouse.Position - _lastState.Mouse.Position;
+				Point result = new Point(_currentState.Mouse.X, _currentState.Mouse.Y) - new Point(_lastState.Mouse.X, _lastState.Mouse.Y);
 				if(FixedUpdateMode)
-					result = _fixedUpdateCurrentState.Mouse.Position - _fixedUpdateLastState.Mouse.Position;
+					result = new Point(_fixedUpdateCurrentState.Mouse.X, _fixedUpdateCurrentState.Mouse.Y) - new Point(_fixedUpdateLastState.Mouse.X, _fixedUpdateLastState.Mouse.Y);
 
 				return new Vector2(result.X, result.Y);
 			}
@@ -116,8 +116,8 @@ namespace TeamStor.Engine
 			_currentState.Mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
 			_currentState.Keyboard = Keyboard.GetState();
 
-            for(int i = 0; i < 4; i++)
-                _currentState.Gamepads[i] = GamePad.GetState(i);
+			for(int i = 0; i < 4; i++)
+				_currentState.Gamepads[i] = GamePad.GetState((PlayerIndex) i);
 		}
 		
 		private void OnFixedUpdateBeforeState(object sender, Game.FixedUpdateEventArgs e)
@@ -131,7 +131,7 @@ namespace TeamStor.Engine
 			_fixedUpdateCurrentState.Keyboard = Keyboard.GetState();
 
             for(int i = 0; i < 4; i++)
-                _fixedUpdateCurrentState.Gamepads[i] = GamePad.GetState(i);
+                _fixedUpdateCurrentState.Gamepads[i] = GamePad.GetState((PlayerIndex) i);
         }
 
         private void OnFixedUpdateAfterState(object sender, Game.FixedUpdateEventArgs e)

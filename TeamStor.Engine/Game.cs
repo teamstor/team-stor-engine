@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using SDL2;
 using TeamStor.Engine.Graphics;
 using TeamStor.Engine.Graphics;
 using static TeamStor.Engine.Graphics.SpriteBatch;
@@ -358,6 +359,9 @@ namespace TeamStor.Engine
         
         [DllImport("Kernel32.dll")]
         private static extern IntPtr LoadLibrary(string path);
+        
+        [DllImport("libdl.so")]
+        protected static extern IntPtr dlopen(string filename, int flags);
 
         /// <summary>
         /// Runs a game with the initial state specified.
@@ -369,11 +373,40 @@ namespace TeamStor.Engine
         {
             if(Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "\\libs\\freetype6.dll");
-                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "\\libs\\SDL2.dll");
-                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "\\libs\\soft_oal.dll");
+                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "libs\\freetype6.dll");
+                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "libs\\SDL2.dll");
+                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "libs\\SDL2_image.dll");
+                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "libs\\soft_oal.dll");
+                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "libs\\FAudio.dll");
+                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "libs\\libtheorafile.dll");
+                LoadLibrary(AppDomain.CurrentDomain.BaseDirectory + "libs\\MojoShader.dll");
             }
             
+            const int RTLD_NOW = 2;
+            const int RTLD_GLOBAL = 0x00100;
+
+            if(Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                if(SDL.SDL_GetPlatform().ToLower().Contains("mac"))
+                {
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libFAudio.dylib", RTLD_NOW | RTLD_GLOBAL);
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libmojoshader.dylib", RTLD_NOW | RTLD_GLOBAL);
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libSDL2-2.0.0.dylib", RTLD_NOW | RTLD_GLOBAL);
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libSDL2_image-2.0.0.dylib", RTLD_NOW | RTLD_GLOBAL);
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libtheorafile.dylib", RTLD_NOW | RTLD_GLOBAL);
+                }
+                else
+                {
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libFAudio.so", RTLD_NOW | RTLD_GLOBAL);
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libmojoshader.so", RTLD_NOW | RTLD_GLOBAL);
+                    dlopen(AppDomain.CurrentDomain.BaseDirectory + "libs/libtheorafile.so", RTLD_NOW | RTLD_GLOBAL);                   
+                }
+            }
+            
+            Environment.SetEnvironmentVariable("FNA_GRAPHICS_ENABLE_HIGHDPI", "1");
+            Environment.SetEnvironmentVariable("FNA_OPENGL_WINDOW_DEPTHSTENCILFORMAT", "None");
+            Environment.SetEnvironmentVariable("FNA_OPENGL_FORCE_CORE_PROFILE", "1");
+
             return new Game(initialState, assetsDir, showTeamStorLogo);
         }
         
@@ -392,12 +425,32 @@ namespace TeamStor.Engine
             IsMouseVisible = true;
             
             _graphicsDeviceManager = new GraphicsDeviceManager(this);
-            _graphicsDeviceManager.HardwareModeSwitch = false;
             _graphicsDeviceManager.SynchronizeWithVerticalRetrace = true;
             _graphicsDeviceManager.PreferredBackBufferWidth = 960;
             _graphicsDeviceManager.PreferredBackBufferHeight = 540;
             _graphicsDeviceManager.IsFullScreen = false;
+
+            FNALoggerEXT.LogInfo += s =>
+            {
+                if(s.StartsWith("OpenGL Device: "))
+                {
+                    _glDevice = s.Replace("OpenGL Device: ", "");
+
+                    for(int i = 0; i < _glDevice.Length; i++)
+                    {
+                        if(_glDevice[i] == '(')
+                        {
+                            _glDevice = _glDevice.Substring(0, i);
+                            break;
+                        }
+                    }
+
+                    _glDevice = _glDevice.Trim();
+                }
+            };
         }
+
+        private string _glDevice = "Unknown GL device";
         
         protected override void LoadContent()
         {            
@@ -594,6 +647,8 @@ namespace TeamStor.Engine
                 
                 if(Stats.HasFlag(DebugStats.FPS))
                 {
+                    Batch.Text(SpriteBatch.FontStyle.Mono, 16, SDL.SDL_GetPlatform() + " / " + _glDevice, new Vector2(10, y), Color.PaleGoldenrod);
+                    y += 24;
                     Batch.Text(SpriteBatch.FontStyle.Mono, 16, "FPS: " + FPS + (VSync ? " (v-sync)" : ""), new Vector2(10, y), Color.PaleGoldenrod);
                     y += 24;
                 }
