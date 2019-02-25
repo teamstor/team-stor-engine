@@ -15,6 +15,11 @@ namespace TeamStor.Engine.Graphics
         private Texture2D _emptyTexture;
 
         /// <summary>
+        /// If the sprite batch should take the transform into account when rounding.
+        /// </summary>
+        public bool UseSmartRound { get; set; } = true;
+
+        /// <summary>
         /// GraphicsDevice used by this SpriteBatch.
         /// </summary>
         public GraphicsDevice Device
@@ -279,6 +284,8 @@ namespace TeamStor.Engine.Graphics
         /// <returns>The rounded vector.</returns>
         public Vector2 SmartRound(Vector2 valueIn)
         {
+            if(!UseSmartRound)
+                return new Vector2((int)valueIn.X, (int)valueIn.Y);
             return new Vector2((int)(valueIn.X * _decomposedTransformScale.X) / _decomposedTransformScale.X, 
                 (int)(valueIn.Y * _decomposedTransformScale.Y) / _decomposedTransformScale.Y);
         }

@@ -1,23 +1,22 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using TeamStor.Engine.Coroutine;
 using TeamStor.Engine.Graphics;
+using TeamStor.Engine.Tween;
 using SpriteBatch = TeamStor.Engine.Graphics.SpriteBatch;
 
 namespace TeamStor.Engine.Internal
 {
     public class TeamStorLogoState : GameState
     {
-        private static readonly Vector2 BIG_BALL_POSITION = new Vector2(60, 85);
-        private static readonly Vector2 SMALL_BALL_POSITION = new Vector2(695, 680);
+        private static string _currentScreen = "screen1";
+        private TweenedDouble _fade;
 
         private GameState _initialState;
-
-        private double _startTime;
-        private float _smallBallScale = 0.0f;
-        private float _bigBallScale = 0.0f;
 
         public TeamStorLogoState(GameState initialState)
         {
@@ -26,19 +25,38 @@ namespace TeamStor.Engine.Internal
 
         public override void OnEnter(GameState previousState)
         {
-            _startTime = Game.Time;
-       }
+            _fade = new TweenedDouble(Game, 0);
+            //MediaPlayer.Play(Assets.Get<Song>("engine/intro/halo.ogg"));
+            Coroutine.Start(LogoCoroutine);
+        }
 
         public override void OnLeave(GameState nextState)
         {
+            MediaPlayer.Stop();
+        }
+
+        private IEnumerator<ICoroutineOperation> LogoCoroutine()
+        {
+            yield return Wait.Seconds(Game, 0.35);
+            _fade.TweenTo(1, TweenEaseType.Linear, 0.3f);
+            yield return Wait.Seconds(Game, 3);
+            _fade.TweenTo(0, TweenEaseType.Linear, 0.3f);
+            yield return Wait.Seconds(Game, 1);
+            
+            _currentScreen = "screen2";
+            yield return Wait.Seconds(Game, 0.25);
+            _fade.TweenTo(1, TweenEaseType.Linear, 0.3f);
+            yield return Wait.Seconds(Game, 3);
+            _fade.TweenTo(0, TweenEaseType.Linear, 0.3f);
+            yield return Wait.Seconds(Game, 1);
+
+            yield return Wait.Seconds(Game, 0.5);
+            Game.CurrentState = _initialState;
         }
 
         public override void Update(double deltaTime, double totalTime, long count)
         {
-            _smallBallScale = MathHelper.LerpPrecise(_smallBallScale, 1.0f, (float)(deltaTime * 0.8f));
-            _bigBallScale = MathHelper.LerpPrecise(_bigBallScale, 1.0f, (float)(deltaTime * 0.8f));
-
-            if(totalTime - _startTime > 5.5f || Input.KeyPressed(Keys.Enter))
+            if(Input.KeyPressed(Keys.Enter))
                 Game.CurrentState = _initialState;
         }
 
@@ -49,14 +67,12 @@ namespace TeamStor.Engine.Internal
         public override void Draw(Graphics.SpriteBatch batch, Vector2 screenSize)
         {
             batch.Rectangle(new Rectangle(0, 0, (int)screenSize.X, (int)screenSize.Y), Color.Black);
+            Rectangle rect = new Rectangle(0, 0, (int) (screenSize.Y * (16.0f / 9.0f)), (int) screenSize.Y);
             
-            batch.Transform = Matrix.CreateTranslation((screenSize.X / 2) / (screenSize.Y / 1080f) - 1080 / 2f, 0, 0) * Matrix.CreateScale(screenSize.Y / 1080f);
+            rect.X += (int)(screenSize.X / 2 - rect.Width / 2);
+            rect.Y += (int)(screenSize.Y / 2 - rect.Height / 2);
 
-            Texture2D smallBall = Assets.Get<Texture2D>("engine/intro/small_ball.png");
-            Texture2D bigBall = Assets.Get<Texture2D>("engine/intro/big_ball.png");
-            
-            batch.Texture(BIG_BALL_POSITION + new Vector2(bigBall.Width / 2 * (1.0f - _bigBallScale), bigBall.Height / 2 * (1.0f - _bigBallScale)), bigBall, Color.White, new Vector2(_bigBallScale, _bigBallScale));
-            batch.Texture(SMALL_BALL_POSITION + new Vector2(smallBall.Width / 2 * (1.0f - _smallBallScale), smallBall.Height / 2 * (1.0f - _smallBallScale)), smallBall, Color.White, new Vector2(_smallBallScale, _smallBallScale));
+            batch.Texture(rect, Assets.Get<Texture2D>("engine/intro/" + _currentScreen + ".png"), Color.White * _fade);
         }
     }
 }
