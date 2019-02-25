@@ -176,6 +176,15 @@ namespace TeamStor.Engine
 				if(_loadedAssets[name].Asset is T)
 				{
 					asset = (T)_loadedAssets[name].Asset;
+					
+					if(keepAfterStateChange && !_loadedAssets[name].KeepAfterStateChange)
+					{
+						LoadedAsset modAsset = _loadedAssets[name];
+						modAsset.KeepAfterStateChange = true;
+						_loadedAssets.Remove(name);
+						_loadedAssets.Add(name, modAsset);
+					}
+					
 					return true;
 				}
 
