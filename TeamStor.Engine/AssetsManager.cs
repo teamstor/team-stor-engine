@@ -238,11 +238,7 @@ namespace TeamStor.Engine
 				
 				if(typeof(T) == typeof(Song))
 				{
-					// https://stackoverflow.com/questions/5813657/xna-4-song-fromuri-containing-spaces/5829463#5829463
-					ConstructorInfo ctor = typeof(Song).GetConstructor(
-						BindingFlags.NonPublic | BindingFlags.Instance, null,
-						new[] { typeof(string) }, null);
-					asset = ctor.Invoke(new object[] { Directory + "/" + name }) as T;
+					asset = Song.FromUri(name, new Uri("file://" + Directory + "/" + name)) as T;
 					
 					_loadedAssets.Add(name, new LoadedAsset(asset, name, keepAfterStateChange));
 					return true;
