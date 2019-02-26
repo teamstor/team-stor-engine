@@ -363,6 +363,9 @@ namespace TeamStor.Engine
         [DllImport("libdl.so")]
         protected static extern IntPtr dlopen(string filename, int flags);
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
+
         /// <summary>
         /// Runs a game with the initial state specified.
         /// </summary>
@@ -406,6 +409,9 @@ namespace TeamStor.Engine
             Environment.SetEnvironmentVariable("FNA_GRAPHICS_ENABLE_HIGHDPI", "1");
             Environment.SetEnvironmentVariable("FNA_OPENGL_WINDOW_DEPTHSTENCILFORMAT", "None");
             Environment.SetEnvironmentVariable("FNA_OPENGL_FORCE_CORE_PROFILE", "1");
+
+            if(Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version.Major >= 6)
+                SetProcessDPIAware();
 
             return new Game(initialState, assetsDir, showTeamStorLogo);
         }
