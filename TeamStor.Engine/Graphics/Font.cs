@@ -79,7 +79,7 @@ namespace TeamStor.Engine.Graphics
 
 		private struct DrawData
 		{
-			public Vector2 Position;
+			public Point Position;
 			public Rectangle CropInTexture;
 			public Texture2D Texture;
 		}
@@ -284,15 +284,22 @@ namespace TeamStor.Engine.Graphics
 			return true;
 		}
 
-		private DrawData[] PositionText(uint size, string text, float lineMult = 1.25f, float spacing = 1)
+        private List<DrawData> _drawDatasCache = new List<DrawData>();
+
+		private List<DrawData> PositionText(uint size, string text, float lineMult = 1.25f, float spacing = 1)
 		{
-			DrawData[] drawDatas = new DrawData[text.Length];
+            if(_drawDatasCache.Capacity < 200)
+                _drawDatasCache.Capacity = 200;
+            if(_drawDatasCache.Capacity < text.Length)
+                _drawDatasCache.Capacity = text.Length;
+
+            _drawDatasCache.Clear();
 
 			LoadedSize loadedSize;
 			if(!_loadedSizes.TryGetValue(size, out loadedSize))
 			{
 				if(!GenerateSize(size))
-					return new DrawData[0];
+					return _drawDatasCache;
 
 				loadedSize = _loadedSizes[size];
 			}
@@ -314,9 +321,14 @@ namespace TeamStor.Engine.Graphics
 					}
 					else
 					{
-						drawDatas[i].Texture = loadedSize.Textures[glyph.Texture];
-						drawDatas[i].CropInTexture = glyph.CropInTexture;
-						drawDatas[i].Position = new Vector2(x + glyph.TextureOffset.X, y + (loadedSize.LineHeight - glyph.TextureOffset.Y));
+                        _drawDatasCache.Add(new DrawData()
+                        {
+                            Texture = loadedSize.Textures[glyph.Texture],
+                            CropInTexture = glyph.CropInTexture,
+                            Position = new Point(
+                                (int)(x + glyph.TextureOffset.X), 
+                                (int)(y + (loadedSize.LineHeight - glyph.TextureOffset.Y)))
+                        });
 
 						x += glyph.Advance.X * spacing;
 						
@@ -327,7 +339,7 @@ namespace TeamStor.Engine.Graphics
 				}
 			}
 
-			return drawDatas;
+			return _drawDatasCache;
 		}
 
 		/// <summary>
@@ -348,7 +360,7 @@ namespace TeamStor.Engine.Graphics
 			foreach(DrawData data in PositionText(size, text, lineMult, spacing))
 			{
 				if(data.Texture != null)
-					batch.Texture(data.Position + pos, data.Texture, color, null, data.CropInTexture);
+					batch.Texture(new Vector2(data.Position.X, data.Position.Y) + pos, data.Texture, color, null, data.CropInTexture);
 			}
 		}
 		

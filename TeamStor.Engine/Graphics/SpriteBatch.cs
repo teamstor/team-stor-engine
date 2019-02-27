@@ -13,6 +13,7 @@ namespace TeamStor.Engine.Graphics
         private Game _game;
         private Microsoft.Xna.Framework.Graphics.SpriteBatch _monoGameSpriteBatch;
         private Texture2D _emptyTexture;
+        private Stopwatch _timer = new Stopwatch();
 
         /// <summary>
         /// If the sprite batch should take the transform into account when rounding.
@@ -264,7 +265,6 @@ namespace TeamStor.Engine.Graphics
             _emptyTexture.SetData(new Color[] { Color.White });
 
             _rastState.ScissorTestEnable = true;
-            _rastState.MultiSampleAntiAlias = true;
         }
 
         private void ResetSpriteBatch()
@@ -493,8 +493,7 @@ namespace TeamStor.Engine.Graphics
         {
             if(ItemsQueued)
             {
-                Stopwatch watch = new Stopwatch();
-                watch.Start();
+                _timer.Restart();
                 
                 if(Scissor.HasValue)
                     _game.GraphicsDevice.ScissorRectangle = Scissor.Value;
@@ -508,9 +507,9 @@ namespace TeamStor.Engine.Graphics
                     _game.GraphicsDevice.SetRenderTarget(null);
                 
                 _game.GraphicsDevice.ScissorRectangle = _game.GraphicsDevice.Viewport.Bounds;
-                
-                watch.Stop();
-                Stats.TimeInEnd += watch.Elapsed.TotalMilliseconds;
+
+                _timer.Stop();
+                Stats.TimeInEnd += _timer.Elapsed.TotalMilliseconds;
             }
 
             ItemsQueued = false;
@@ -529,8 +528,6 @@ namespace TeamStor.Engine.Graphics
             _decomposedTransformScale = new Vector3(1, 1, 1);
             _scissor = null;
             _renderTarget = null;
-            _rastState = new RasterizerState();
-            _rastState.ScissorTestEnable = true;
             
             if(ItemsQueued)
                 End();

@@ -485,10 +485,14 @@ namespace TeamStor.Engine
 
             CurrentState = null;
         }
-        
+
+        private Stopwatch _updateTimer = new Stopwatch();
+        private UpdateEventArgs _updateEventArgs = new UpdateEventArgs(0, 0, 0);
+        private FixedUpdateEventArgs _fixedUpdateEventArgs = new FixedUpdateEventArgs(0);
+
         protected override void Update(GameTime gameTime)
         {
-            Stopwatch watch = new Stopwatch();
+            _updateTimer.Restart();
 
             if(_timer == null)
                 _timer = Stopwatch.StartNew();
@@ -498,8 +502,12 @@ namespace TeamStor.Engine
 
             _timer.Restart();
 
+            _updateEventArgs.DeltaTime = DeltaTime;
+            _updateEventArgs.TotalTime = Time;
+            _updateEventArgs.Count = TotalUpdates;
+
             if(OnUpdateBeforeState != null)
-                OnUpdateBeforeState(this, new UpdateEventArgs(DeltaTime, Time, TotalUpdates));
+                OnUpdateBeforeState(this, _updateEventArgs);
 
             if(CurrentState != null)
             {
@@ -508,9 +516,10 @@ namespace TeamStor.Engine
             }
 
             TotalUpdates++;
+            _updateEventArgs.Count = TotalUpdates;
 
             if(OnUpdateAfterState != null)
-                OnUpdateAfterState(this, new UpdateEventArgs(DeltaTime, Time, TotalUpdates));
+                OnUpdateAfterState(this, _updateEventArgs);
             
             if(Input.KeyPressed(Keys.F1))
             {
@@ -592,37 +601,41 @@ namespace TeamStor.Engine
                 _framesSinceLastFpsReset = 0;
                 _accumTimeSinceLastFpsReset -= 1.0;
             }
-            
-            watch.Stop();
-            _timeInUpdate = watch.Elapsed.TotalMilliseconds;
-            watch.Start();
+
+            _updateTimer.Stop();
+            _timeInUpdate = _updateTimer.Elapsed.TotalMilliseconds;
+            _updateTimer.Restart();
             
             while(_accumTime >= (1.0 / FixedUpdatesPerSecond))
             {
+                _fixedUpdateEventArgs.Count = TotalFixedUpdates;
+
                 if(OnFixedUpdateBeforeState != null)
-                    OnFixedUpdateBeforeState(this, new FixedUpdateEventArgs(TotalFixedUpdates));
+                    OnFixedUpdateBeforeState(this, _fixedUpdateEventArgs);
 
                 if(CurrentState != null)
                     CurrentState.FixedUpdate(TotalFixedUpdates);
                 
                 TotalFixedUpdates++;
-                    
+                _fixedUpdateEventArgs.Count = TotalFixedUpdates;
+
                 if(OnFixedUpdateAfterState != null)
-                    OnFixedUpdateAfterState(this, new FixedUpdateEventArgs(TotalFixedUpdates));
+                    OnFixedUpdateAfterState(this, _fixedUpdateEventArgs);
                 
                 _accumTime -= (1.0 / FixedUpdatesPerSecond);
             }
 
-            watch.Stop();
-            _timeInFixedUpdate = watch.Elapsed.TotalMilliseconds;
+            _updateTimer.Stop();
+            _timeInFixedUpdate = _updateTimer.Elapsed.TotalMilliseconds;
             
             base.Update(gameTime);
         }
 
+        private Stopwatch _drawTimer = new Stopwatch();
+
         protected override void Draw(GameTime gameTime)
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
+            _drawTimer.Restart();
             
             GraphicsDevice.Clear(new Color(0.15f, 0.15f, 0.15f));
             
@@ -631,9 +644,9 @@ namespace TeamStor.Engine
                 CurrentState.Draw(Batch, viewport);
                         
             Batch.Reset();
-            
-            watch.Stop();
-            _timeInDraw = watch.Elapsed.TotalMilliseconds;
+
+            _drawTimer.Stop();
+            _timeInDraw = _drawTimer.Elapsed.TotalMilliseconds;
             
             if(CurrentState == null)
             {

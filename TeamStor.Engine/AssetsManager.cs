@@ -20,7 +20,7 @@ namespace TeamStor.Engine
 	{
         private FileSystemWatcher _watcher;
 
-		private struct LoadedAsset
+		private class LoadedAsset
 		{
 			public LoadedAsset(IDisposable asset, string path, bool keepAfterStateChange)
 			{
@@ -170,25 +170,14 @@ namespace TeamStor.Engine
 		public bool TryLoadAsset<T>(string name, out T asset, bool keepAfterStateChange = false) where T : class, IDisposable
 		{
             asset = null;
+            LoadedAsset loadedAsset;
 
-			if(_loadedAssets.ContainsKey(name))
+			if(_loadedAssets.TryGetValue(name, out loadedAsset))
 			{
-				if(_loadedAssets[name].Asset is T)
-				{
-					asset = (T)_loadedAssets[name].Asset;
+				asset = loadedAsset.Asset as T;
+                loadedAsset.KeepAfterStateChange = loadedAsset.KeepAfterStateChange || keepAfterStateChange;
 					
-					if(keepAfterStateChange && !_loadedAssets[name].KeepAfterStateChange)
-					{
-						LoadedAsset modAsset = _loadedAssets[name];
-						modAsset.KeepAfterStateChange = true;
-						_loadedAssets.Remove(name);
-						_loadedAssets.Add(name, modAsset);
-					}
-					
-					return true;
-				}
-
-				return false;
+				return loadedAsset.Asset is T;
 			}
 			
 			if(!File.Exists(Directory + "/" + name))
