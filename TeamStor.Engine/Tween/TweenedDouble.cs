@@ -40,7 +40,7 @@ namespace TeamStor.Engine.Tween
     /// Value that can be tweened to other values.
     /// Based on https://github.com/danro/jquery-easing/blob/master/jquery.easing.js
     /// </summary>
-    public struct TweenedDouble
+    public class TweenedDouble
     {
         private Game _game;
         private double _sourceValue;

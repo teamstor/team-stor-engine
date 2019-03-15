@@ -6,7 +6,7 @@ namespace TeamStor.Engine.Tween
 	/// Value that can be tweened to other values.
 	/// Based on https://github.com/danro/jquery-easing/blob/master/jquery.easing.js
 	/// </summary>
-	public struct TweenedRectangle
+	public class TweenedRectangle
 	{
 		private TweenedDouble _x, _y, _w, _h;
 		
